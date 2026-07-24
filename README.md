@@ -8,14 +8,16 @@
 
 Become a Data Engineer with a modern data stack.
 
-Current learning path:
+Target learning path:
 
 - Linux
 - Docker
+- Git
 - Spark (PySpark)
 - Airflow
 - AWS (S3 / Glue / Athena)
 - dbt
+- End-to-End Project
 
 The focus is on hands-on practice rather than memorizing concepts.
 
@@ -28,6 +30,7 @@ The focus is on hands-on practice rather than memorizing concepts.
 | OS | Windows 10 |
 | Virtual Machine | VMware Workstation 17 |
 | Guest OS | Ubuntu Server 26.04 |
+| Hostname | data-lab |
 | IDE | VS Code |
 | Version Control | Git |
 | Programming Language | Python 3 |
@@ -42,25 +45,38 @@ The focus is on hands-on practice rather than memorizing concepts.
 - [x] SSH Remote Connection
 - [x] Basic Linux Commands
 
-    - User/pwd:kevin/kevin
-    - hostname:data-lab
 ---
 
 ## Phase 2 - Docker
 
 - [x] Docker Installation
+- [x] Registry Mirror
 - [x] Image
 - [x] Container
 - [x] Container Lifecycle
 - [x] Volume
-- [ ] Bind Mount
-- [ ] Docker Network
-- [ ] Dockerfile
-- [ ] Docker Compose
+- [x] Bind Mount
+- [x] Docker Network
+- [x] Dockerfile
+- [x] Docker Compose
 
 ---
 
-## Phase 3 - Spark
+## Phase 3 - Git
+
+- [x] Git Installation
+- [x] Git Init
+- [x] Git Add
+- [x] Git Commit
+- [ ] Git Status
+- [ ] Git Log
+- [ ] .gitignore
+- [ ] GitHub Remote Repository
+- [ ] Git Push
+
+---
+
+## Phase 4 - Spark
 
 - [ ] Spark Architecture
 - [ ] PySpark
@@ -72,7 +88,7 @@ The focus is on hands-on practice rather than memorizing concepts.
 
 ---
 
-## Phase 4 - Airflow
+## Phase 5 - Airflow
 
 - [ ] DAG
 - [ ] Operators
@@ -81,7 +97,7 @@ The focus is on hands-on practice rather than memorizing concepts.
 
 ---
 
-## Phase 5 - AWS
+## Phase 6 - AWS
 
 - [ ] IAM
 - [ ] S3
@@ -90,7 +106,7 @@ The focus is on hands-on practice rather than memorizing concepts.
 
 ---
 
-## Phase 6 - dbt
+## Phase 7 - dbt
 
 - [ ] Model
 - [ ] ref()
@@ -100,11 +116,11 @@ The focus is on hands-on practice rather than memorizing concepts.
 
 ---
 
-## Phase 7 - End-to-End Project
+## Phase 8 - End-to-End Project
 
 Build a complete Data Engineering pipeline.
 
-```
+```text
 CSV
     │
     ▼
@@ -127,72 +143,3 @@ dbt
     │
     ▼
 Analytics
-```
-
----
-
-# 📂 Repository Structure
-
-```
-data-engineering-learning/
-│
-├── README.md
-│
-├── 01-linux/
-│
-├── 02-docker/
-│
-├── 03-spark/
-│
-├── 04-airflow/
-│
-├── 05-aws/
-│
-├── 06-dbt/
-│
-└── project/
-```
-
----
-
-# 📖 Learning Principles
-
-- Learn one concept at a time.
-- Practice before theory.
-- Build everything from scratch.
-- Record every experiment.
-- Understand the reason behind every command.
-
----
-
-# 📝 Notes
-
-Each module contains:
-
-- Notes
-- Commands
-- Hands-on Labs
-- Summary
-- Interview Notes
-
----
-
-# 🚀 Progress
-
-Current Stage:
-
-```
-Linux              ✅
-Docker             🚧
-Spark
-Airflow
-AWS
-dbt
-Project
-```
-
----
-
-Last Updated:
-
-2026
