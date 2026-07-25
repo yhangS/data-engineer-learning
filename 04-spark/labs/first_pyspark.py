@@ -22,15 +22,23 @@ def main():
     print("1. Original Data")
     df.show()
 
-    print("2. Add amount_level column")
-    result:DataFrame = df.withColumn(
-        "amount_level",
-        F.when(F.col("amount")>=20,"high")
-        .otherwise("low")
-    )
+    print("2. Order by amount ascending")
+    df.orderBy(
+        F.col("amount").asc()
+    ).show()
+
+    print("3. Order by amount descending")
+    df.orderBy(
+        F.col("amount").desc()
+    ).show()
+
+    print("4. Top 3 amount")
+    result:DataFrame = df.orderBy(
+        F.col("amount").desc()
+    ).limit(3)
 
     result.show()
-    
+
     spark.stop()
 
 
