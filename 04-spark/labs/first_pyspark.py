@@ -18,7 +18,6 @@ def main():
 
     df = spark.createDataFrame(data, columns)
 
-    print("1. Create Transformation")
     result:DataFrame = (
         df.filter(df.amount>20)
     .select("city","amount")
@@ -27,16 +26,14 @@ def main():
     )
 
 
-    print("2. No result has been printed yet")
+    print("1. Explain execution plan")
+    result.explain(True)
 
 
-    print("3. Action: show")
+    print("2. Action: show result")
     result.show()
     
 
-    print("4. Action: count")
-    row_count = result.count()
-    print(f"Row count: {row_count}")
 
     spark.stop()
 
