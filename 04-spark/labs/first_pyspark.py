@@ -18,26 +18,25 @@ def main():
 
     df = spark.createDataFrame(data, columns)
 
-    print("1. Original Data")
-    df.show()
+    print("1. Create Transformation")
+    result:DataFrame = (
+        df.filter(df.amount>20)
+    .select("city","amount")
+    .groupBy("city")
+    .sum("amount")
+    )
 
-    print("2. DataFrame API Filter:amount > 20")
-    df.filter(df.amount>20).show()
 
-    print("3. SQL Filter:amount > 20")
-    df.createOrReplaceTempView("sales")
+    print("2. No result has been printed yet")
 
-    spark.sql("""
-    select city,category,amount from sales where amount > 20
-    """).show()
 
-    print("4. DataFrame API:group by city")
-    df.groupBy("city").sum("amount").show()
+    print("3. Action: show")
+    result.show()
+    
 
-    print("5. SQL:group by city")
-    spark.sql("""
-    select city,sum(amount) from sales group by city
-    """).show()
+    print("4. Action: count")
+    row_count = result.count()
+    print(f"Row count: {row_count}")
 
     spark.stop()
 
