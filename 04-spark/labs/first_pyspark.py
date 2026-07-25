@@ -3,7 +3,7 @@ from pyspark.sql import SparkSession
 
 def main():
     spark = SparkSession.builder \
-        .appName("dataframe-basic") \
+        .appName("dataframe-api-vs-sql") \
         .getOrCreate()
 
     data = [
@@ -21,17 +21,23 @@ def main():
     print("1. Original Data")
     df.show()
 
-    print("2. Schema")
-    df.printSchema()
+    print("2. DataFrame API Filter:amount > 20")
+    df.filter(df.amount>20).show()
 
-    print("3. Select Columns")
-    df.select("city", "amount").show()
+    print("3. SQL Filter:amount > 20")
+    df.createOrReplaceTempView("sales")
 
-    print("4. Filter amount > 20")
-    df.filter(df.amount > 20).show()
+    spark.sql("""
+    select city,category,amount from sales where amount > 20
+    """).show()
 
-    print("5. Group By city")
+    print("4. DataFrame API:group by city")
     df.groupBy("city").sum("amount").show()
+
+    print("5. SQL:group by city")
+    spark.sql("""
+    select city,sum(amount) from sales group by city
+    """).show()
 
     spark.stop()
 
