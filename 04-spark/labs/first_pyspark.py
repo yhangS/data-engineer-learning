@@ -4,31 +4,36 @@ from pyspark.sql import functions as F
 
 def main():
     spark = SparkSession.builder \
-        .appName("join-basic") \
+        .appName("join-column-conflict") \
         .getOrCreate()
 
     sales_data = [
-        ("Beijing", 10),
-        ("Shanghai", 20),
-        ("Beijing", 30),
-        ("Guangzhou", 15),
-        ("Shenzhen", 25)
+        ("Beijing", "order_001", 10),
+        ("Shanghai", "order_002", 20),
+        ("Beijing", "order_003", 30),
+        ("Guangzhou", "order_004", 15),
+        ("Shenzhen", "order_005", 25)
     ]
 
-    sales_columns = ["city", "amount"]
+    sales_columns = ["city", "name", "amount"]
 
-    sales_df: DataFrame = spark.createDataFrame(sales_data, sales_columns)
+    sales_df: DataFrame = spark.createDataFrame(
+        sales_data,
+        sales_columns
+    )
 
     city_data = [
-        ("Beijing", "North"),
-        ("Shanghai", "East"),
-        ("Guangzhou", "South")
+        ("Beijing", "Beijing CN", "North"),
+        ("Shanghai", "Shanghai CN", "East"),
+        ("Guangzhou", "Guangzhou CN", "South")
     ]
 
-    city_columns = ["city", "region"]
+    city_columns = ["city", "name", "region"]
 
-    city_df:DataFrame = spark.createDataFrame(city_data,city_columns)
-
+    city_df: DataFrame = spark.createDataFrame(
+        city_data,
+        city_columns
+    )
 
     print("1. Sales Data")
     sales_df.show()
@@ -36,18 +41,26 @@ def main():
     print("2. City Dimension Data")
     city_df.show()
 
-    print("3. Inner Join")
-    inner_result:DataFrame = sales_df.join(city_df,on="city",how="inner")
-    inner_result.show()
+    sales = sales_df.alias("s")
+    city = city_df.alias("c")
 
-    print("4. Left Join")
-    left_result:DataFrame = sales_df.join(city_df,on="city",how="left")
-    left_result.show()
+    print("3. Left Join with aliases")
+    result :DataFrame = (
+        sales.join(
+            city,
+            on=F.col("s.city") == F.col("c.city"),
+            how="left"
+        )
+        .select(
+            F.col("s.city").alias("city"),
+            F.col("s.name").alias("order_name"),
+            F.col("s.amount").alias("amount"),
+            F.col("c.region").alias("region"),
+            F.col("c.name").alias("city_name"),
+        )
+    )
+    result.show()
 
-    print("5. Full Join")
-    full_result:DataFrame = sales_df.join(city_df,on="city",how="full")
-    full_result.show()
-    
     spark.stop()
 
 
