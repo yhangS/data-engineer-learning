@@ -1,4 +1,5 @@
 from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
 
 
 def main():
@@ -16,24 +17,26 @@ def main():
 
     columns = ["city", "category", "amount"]
 
-    df = spark.createDataFrame(data, columns)
+    df: DataFrame = spark.createDataFrame(data, columns)
 
-    result:DataFrame = (
-        df.filter(df.amount>20)
-    .select("city","amount")
-    .groupBy("city")
-    .sum("amount")
+    print("1. Original Data")
+    df.show()
+
+    print("2. Add new column: amount_x10")
+    df_with_new_column:DataFrame = df.withColumn(
+        "amount_x10",
+        F.col("amount")*10
+        )
+
+    df_with_new_column.show()
+
+    print("3. Modify existing column: amount")
+    df_modified:DataFrame = df.withColumn(
+        "amount",
+        F.col("amount")+100
     )
 
-
-    print("1. Explain execution plan")
-    result.explain(True)
-
-
-    print("2. Action: show result")
-    result.show()
-    
-
+    df_modified.show()
 
     spark.stop()
 
