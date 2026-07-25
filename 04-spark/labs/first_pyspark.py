@@ -1,44 +1,53 @@
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession,DataFrame
 from pyspark.sql import functions as F
 
 
 def main():
     spark = SparkSession.builder \
-        .appName("dataframe-api-vs-sql") \
+        .appName("join-basic") \
         .getOrCreate()
 
-    data = [
-        ("Beijing", "A", 10),
-        ("Shanghai", "A", 20),
-        ("Beijing", "B", 30),
-        ("Guangzhou", "B", 15),
-        ("Shanghai", "B", 25)
+    sales_data = [
+        ("Beijing", 10),
+        ("Shanghai", 20),
+        ("Beijing", 30),
+        ("Guangzhou", 15),
+        ("Shenzhen", 25)
     ]
 
-    columns = ["city", "category", "amount"]
+    sales_columns = ["city", "amount"]
 
-    df: DataFrame = spark.createDataFrame(data, columns)
+    sales_df: DataFrame = spark.createDataFrame(sales_data, sales_columns)
 
-    print("1. Original Data")
-    df.show()
+    city_data = [
+        ("Beijing", "North"),
+        ("Shanghai", "East"),
+        ("Guangzhou", "South")
+    ]
 
-    print("2. Order by amount ascending")
-    df.orderBy(
-        F.col("amount").asc()
-    ).show()
+    city_columns = ["city", "region"]
 
-    print("3. Order by amount descending")
-    df.orderBy(
-        F.col("amount").desc()
-    ).show()
+    city_df:DataFrame = spark.createDataFrame(city_data,city_columns)
 
-    print("4. Top 3 amount")
-    result:DataFrame = df.orderBy(
-        F.col("amount").desc()
-    ).limit(3)
 
-    result.show()
+    print("1. Sales Data")
+    sales_df.show()
 
+    print("2. City Dimension Data")
+    city_df.show()
+
+    print("3. Inner Join")
+    inner_result:DataFrame = sales_df.join(city_df,on="city",how="inner")
+    inner_result.show()
+
+    print("4. Left Join")
+    left_result:DataFrame = sales_df.join(city_df,on="city",how="left")
+    left_result.show()
+
+    print("5. Full Join")
+    full_result:DataFrame = sales_df.join(city_df,on="city",how="full")
+    full_result.show()
+    
     spark.stop()
 
 
