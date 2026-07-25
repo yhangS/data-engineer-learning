@@ -22,22 +22,15 @@ def main():
     print("1. Original Data")
     df.show()
 
-    print("2. Add new column: amount_x10")
-    df_with_new_column:DataFrame = df.withColumn(
-        "amount_x10",
-        F.col("amount")*10
-        )
-
-    df_with_new_column.show()
-
-    print("3. Modify existing column: amount")
-    df_modified:DataFrame = df.withColumn(
-        "amount",
-        F.col("amount")+100
+    print("2. Add amount_level column")
+    result:DataFrame = df.withColumn(
+        "amount_level",
+        F.when(F.col("amount")>=20,"high")
+        .otherwise("low")
     )
 
-    df_modified.show()
-
+    result.show()
+    
     spark.stop()
 
 
