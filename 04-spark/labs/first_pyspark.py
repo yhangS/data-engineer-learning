@@ -2,35 +2,37 @@ from pyspark.sql import SparkSession
 
 
 def main():
-    # 1. Create SparkSession
     spark = SparkSession.builder \
-        .appName("first-pyspark-job") \
+        .appName("dataframe-basic") \
         .getOrCreate()
 
-    # 2. Create sample data
     data = [
-        ("Beijing", 10),
-        ("Shanghai", 20),
-        ("Beijing", 30),
-        ("Guangzhou", 15),
-        ("Shanghai", 25)
+        ("Beijing", "A", 10),
+        ("Shanghai", "A", 20),
+        ("Beijing", "B", 30),
+        ("Guangzhou", "B", 15),
+        ("Shanghai", "B", 25)
     ]
 
-    columns = ["city", "amount"]
+    columns = ["city", "category", "amount"]
 
-    # 3. Create DataFrame
     df = spark.createDataFrame(data, columns)
 
-    print("Original Data:")
+    print("1. Original Data")
     df.show()
 
-    # 4. Group by city
-    result = df.groupBy("city").sum("amount")
+    print("2. Schema")
+    df.printSchema()
 
-    print("Aggregated Result:")
-    result.show()
+    print("3. Select Columns")
+    df.select("city", "amount").show()
 
-    # 5. Stop SparkSession
+    print("4. Filter amount > 20")
+    df.filter(df.amount > 20).show()
+
+    print("5. Group By city")
+    df.groupBy("city").sum("amount").show()
+
     spark.stop()
 
 
