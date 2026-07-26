@@ -1,43 +1,43 @@
 from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql import functions as F
 
 
 def main():
     spark = (
         SparkSession.builder
-        .appName("union-by-name-missing-columns")
+        .appName("aggregation-basic")
         .getOrCreate()
     )
 
-    data_2025 = [
-        ("Beijing", "order_001", 10),
-        ("Shanghai", "order_002", 20)
+    data = [
+        ("Beijing", "A", 10),
+        ("Beijing", "A", 30),
+        ("Beijing", "B", 20),
+        ("Shanghai", "A", 40),
+        ("Shanghai", "B", 50),
+        ("Guangzhou", "A", 15)
     ]
 
-    columns_2025 = ["city", "order_id", "amount"]
+    columns = ["city", "category", "amount"]
 
-    data_2026 = [
-        ("Guangzhou", "order_003", 15, "app"),
-        ("Shenzhen", "order_004", 25, "web")
-    ]
+    df: DataFrame = spark.createDataFrame(data, columns)
 
-    columns_2026 = ["city", "order_id", "amount", "channel"]
+    print("1. Original Data")
+    df.show()
 
-    df_2025: DataFrame = spark.createDataFrame(data_2025, columns_2025)
-    df_2026: DataFrame = spark.createDataFrame(data_2026, columns_2026)
+    print("2. Aggregation by city")
+    city_result:DataFrame = df.groupBy(F.col("city")).agg(F.sum(F.col("amount")).alias("total_amount")) 
 
-    print("1. Data 2025")
-    df_2025.show()
+    city_result.show()
 
-    print("2. Data 2026")
-    df_2026.show()
-
-    print("3. Union by name with missing columns")
-    result: DataFrame = df_2025.unionByName(
-        df_2026,
-        allowMissingColumns=True
+    print("3. Aggregation by city and category")
+    city_category_result: DataFrame = df.groupBy("city", "category").agg(
+        F.sum("amount").alias("total_amount"),
+        F.count("*").alias("order_count"),
+        F.avg("amount").alias("avg_amount")
     )
 
-    result.show()
+    city_category_result.show()
 
     spark.stop()
 
