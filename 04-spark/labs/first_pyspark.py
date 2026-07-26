@@ -5,7 +5,7 @@ from pyspark.sql import functions as F
 def main():
     spark = (
         SparkSession.builder
-        .appName("shuffle-basic")
+        .appName("cache-basic")
         .getOrCreate()
     )
 
@@ -21,22 +21,23 @@ def main():
 
     df: DataFrame = spark.createDataFrame(data, columns)
 
-    print("1. Original Data")
-    df.show()
-
-    print("2. Filter only")
-    filter_result: DataFrame = df.filter(F.col("amount") > 10)
-
-    filter_result.explain(True)
-    filter_result.show()
-
-    print("3. Group by city")
-    group_result: DataFrame = df.groupBy("city").agg(
-        F.sum("amount").alias("total_amount")
+    result: DataFrame = df.groupBy("city").agg(
+        F.sum("amount").alias("total_amount"),
+        F.count("*").alias("order_count")
     )
 
-    group_result.explain(True)
-    group_result.show()
+    print("1. Cache result")
+    result.cache()
+
+    print("2. First action: show")
+    result.show()
+
+    print("3. Second action: count")
+    row_count = result.count()
+    print(f"Row count: {row_count}")
+
+    print("4. Release cache")
+    result.unpersist()
 
     spark.stop()
 
