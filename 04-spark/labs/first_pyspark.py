@@ -5,39 +5,40 @@ from pyspark.sql import functions as F
 def main():
     spark = (
         SparkSession.builder
-        .appName("cache-basic")
+        .appName("performance-basic")
         .getOrCreate()
     )
 
     data = [
-        ("Beijing", "order_001", 10),
-        ("Beijing", "order_002", 30),
-        ("Shanghai", "order_003", 20),
-        ("Guangzhou", "order_004", 15),
-        ("Shanghai", "order_005", 25)
+        ("2026-07-26", "Beijing", "order_001", 10),
+        ("2026-07-26", "Beijing", "order_002", 30),
+        ("2026-07-26", "Shanghai", "order_003", 20),
+        ("2026-07-25", "Guangzhou", "order_004", 15),
+        ("2026-07-25", "Shanghai", "order_005", 25)
     ]
 
-    columns = ["city", "order_id", "amount"]
+    columns = ["dt", "city", "order_id", "amount"]
 
     df: DataFrame = spark.createDataFrame(data, columns)
 
-    result: DataFrame = df.groupBy("city").agg(
-        F.sum("amount").alias("total_amount"),
-        F.count("*").alias("order_count")
+    print("1. Original Data")
+    df.show()
+
+    print("2. Filter early and select needed columns")
+    filtered_df: DataFrame = (
+        df.filter(F.col("dt") == "2026-07-26")
+          .select("city", "amount")
     )
 
-    print("1. Cache result")
-    result.cache()
+    filtered_df.show()
 
-    print("2. First action: show")
+    print("3. Aggregation after filtering")
+    result: DataFrame = filtered_df.groupBy("city").agg(
+        F.sum("amount").alias("total_amount")
+    )
+
+    result.explain(True)
     result.show()
-
-    print("3. Second action: count")
-    row_count = result.count()
-    print(f"Row count: {row_count}")
-
-    print("4. Release cache")
-    result.unpersist()
 
     spark.stop()
 
