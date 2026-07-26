@@ -22,3 +22,5 @@ Thumbs.db
 *.csv
 *.parquet
 *.json
+*.parquet*
+*SUCCESS*
