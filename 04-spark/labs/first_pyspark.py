@@ -1,16 +1,15 @@
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql import functions as F
 
 
 def main():
     spark = (
         SparkSession.builder
-        .appName("parquet-basic")
+        .appName("partition-basic")
         .getOrCreate()
     )
 
     input_path = "/data/input/sales.csv"
-    output_path = "/data/output/sales_parquet"
+    output_path = "/data/output/sales_partitioned"
 
     print("1. Read CSV")
     df: DataFrame = (
@@ -23,26 +22,19 @@ def main():
     df.show()
     df.printSchema()
 
-    print("2. Aggregation")
-    result: DataFrame = df.groupBy("city").agg(
-        F.sum("amount").alias("total_amount"),
-        F.count("*").alias("order_count")
-    )
-
-    result.show()
-
-    print("3. Write result as Parquet")
+    print("2. Write Parquet partitioned by city")
     (
-        result.write
+        df.write
         .mode("overwrite")
+        .partitionBy("city")
         .parquet(output_path)
     )
 
-    print("4. Read Parquet result")
-    parquet_df: DataFrame = spark.read.parquet(output_path)
+    print("3. Read partitioned Parquet")
+    result: DataFrame = spark.read.parquet(output_path)
 
-    parquet_df.show()
-    parquet_df.printSchema()
+    result.show()
+    result.printSchema()
 
     spark.stop()
 
