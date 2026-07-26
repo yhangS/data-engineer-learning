@@ -4,35 +4,37 @@ from pyspark.sql import SparkSession, DataFrame
 def main():
     spark = (
         SparkSession.builder
-        .appName("drop-duplicates-basic")
+        .appName("union-basic")
         .getOrCreate()
     )
 
-    data = [
+    data_2025 = [
         ("Beijing", "order_001", 10),
         ("Shanghai", "order_002", 20),
-        ("Beijing", "order_001", 10),
-        ("Beijing", "order_003", 30),
-        ("Shanghai", "order_004", 25),
-        ("Guangzhou", "order_005", 15)
+        ("Guangzhou", "order_003", 15)
+    ]
+
+    data_2026 = [
+        ("Beijing", "order_004", 30),
+        ("Shanghai", "order_005", 25),
+        ("Shenzhen", "order_006", 40)
     ]
 
     columns = ["city", "order_id", "amount"]
 
-    df: DataFrame = spark.createDataFrame(data, columns)
+    df_2025: DataFrame = spark.createDataFrame(data_2025, columns)
+    df_2026: DataFrame = spark.createDataFrame(data_2026, columns)
 
-    print("1. Original Data")
-    df.show()
+    print("1. Data 2025")
+    df_2025.show()
 
-    print("2. Drop duplicate rows")
-    result1: DataFrame = df.dropDuplicates()
+    print("2. Data 2026")
+    df_2026.show()
 
-    result1.show()
+    print("3. Union Result")
+    result: DataFrame = df_2025.union(df_2026)
 
-    print("3. Drop duplicates by city")
-    result2: DataFrame = df.dropDuplicates(["city"])
-
-    result2.show()
+    result.show()
 
     spark.stop()
 
