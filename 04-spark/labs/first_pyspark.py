@@ -5,39 +5,43 @@ from pyspark.sql import functions as F
 def main():
     spark = (
         SparkSession.builder
-        .appName("performance-basic")
+        .appName("mini-etl-project")
         .getOrCreate()
     )
 
-    data = [
-        ("2026-07-26", "Beijing", "order_001", 10),
-        ("2026-07-26", "Beijing", "order_002", 30),
-        ("2026-07-26", "Shanghai", "order_003", 20),
-        ("2026-07-25", "Guangzhou", "order_004", 15),
-        ("2026-07-25", "Shanghai", "order_005", 25)
-    ]
+    input_path = "/data/input/orders.csv"
+    output_path = "/data/output/dws_city_sales_daily"
 
-    columns = ["dt", "city", "order_id", "amount"]
+    print("1. Read source CSV")
+    ods_orders:DataFrame = (
+            spark.read
+            .option("header",True)
+            .option("inferSchema",True)
+            .csv(input_path)
+        )
 
-    df: DataFrame = spark.createDataFrame(data, columns)
+    ods_orders.show()
+    ods_orders.printSchema()
 
-    print("1. Original Data")
-    df.show()
+    print("2. Clean data: keep success orders only")
+    dwd_orders = ods_orders.filter(F.col("status")=="success") \
+        .select([F.col("dt"),F.col("city"),F.col("order_id"),F.col("amount"),F.col("status")])  
 
-    print("2. Filter early and select needed columns")
-    filtered_df: DataFrame = (
-        df.filter(F.col("dt") == "2026-07-26")
-          .select("city", "amount")
+    dwd_orders.show()
+
+    print("3. Aggregate: daily sales by city")
+    dws_city_sales_daily = dwd_orders.groupBy(F.col("dt"),F.col("city")).agg(
+        F.sum(F.col("amount")).alias("total_amount"),
+        F.count("*").alias("order_count")
     )
 
-    filtered_df.show()
+    dws_city_sales_daily.show()
 
-    print("3. Aggregation after filtering")
-    result: DataFrame = filtered_df.groupBy("city").agg(
-        F.sum("amount").alias("total_amount")
-    )
+    print("4. Write result as partitioned Parquet")
+    dws_city_sales_daily.write.mode("overwrite").partitionBy("dt").parquet(output_path)
 
-    result.explain(True)
+    print("5. Read result back")
+    result:DataFrame = spark.read.parquet(output_path)
     result.show()
 
     spark.stop()
