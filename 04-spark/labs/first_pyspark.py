@@ -1,68 +1,36 @@
-from pyspark.sql import SparkSession,DataFrame
-from pyspark.sql import functions as F
+from pyspark.sql import SparkSession, DataFrame
 
 
 def main():
-    spark = SparkSession.builder \
-        .appName("drop-column-basic") \
+    spark = (
+        SparkSession.builder
+        .appName("drop-duplicates-basic")
         .getOrCreate()
+    )
 
-    sales_data = [
+    data = [
         ("Beijing", "order_001", 10),
         ("Shanghai", "order_002", 20),
+        ("Beijing", "order_001", 10),
         ("Beijing", "order_003", 30),
-        ("Guangzhou", "order_004", 15),
-        ("Shenzhen", "order_005", 25)
+        ("Shanghai", "order_004", 25),
+        ("Guangzhou", "order_005", 15)
     ]
 
-    sales_columns = ["city", "name", "amount"]
+    columns = ["city", "order_id", "amount"]
 
-    sales_df: DataFrame = spark.createDataFrame(
-        sales_data,
-        sales_columns
-    )
+    df: DataFrame = spark.createDataFrame(data, columns)
 
-    city_data = [
-        ("Beijing", "Beijing CN", "North"),
-        ("Shanghai", "Shanghai CN", "East"),
-        ("Guangzhou", "Guangzhou CN", "South")
-    ]
+    print("1. Original Data")
+    df.show()
 
-    city_columns = ["city", "name", "region"]
+    print("2. Drop duplicate rows")
+    result1: DataFrame = df.dropDuplicates()
 
-    city_df: DataFrame = spark.createDataFrame(
-        city_data,
-        city_columns
-    )
+    result1.show()
 
-    sales:DataFrame = sales_df.alias("s")
-    city:DataFrame = city_df.alias("c")
-
-    joined_df :DataFrame = (
-        sales.join(
-            city,
-            on=F.col("s.city") == F.col("c.city"),
-            how="left"
-        )
-        .select(
-            F.col("s.city").alias("city"),
-            F.col("s.name").alias("order_name"),
-            F.col("s.amount").alias("amount"),
-            F.col("c.region").alias("region"),
-            F.col("c.name").alias("city_name"),
-        )
-    )
-
-    print("1. Joined Data")
-    joined_df.show()
-
-    print("2. Drop city_name column")
-    result: DataFrame = joined_df.drop(F.col("city_name"))
-
-    result.show()
-
-    print("3. Drop city_name and region columns")
-    result2: DataFrame = joined_df.drop(F.col("city_name"), F.col("region"))
+    print("3. Drop duplicates by city")
+    result2: DataFrame = df.dropDuplicates(["city"])
 
     result2.show()
 
