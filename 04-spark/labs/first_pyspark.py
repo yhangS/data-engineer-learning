@@ -1,40 +1,42 @@
 from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql import functions as F
 
 
 def main():
     spark = (
         SparkSession.builder
-        .appName("partition-basic")
+        .appName("shuffle-basic")
         .getOrCreate()
     )
 
-    input_path = "/data/input/sales.csv"
-    output_path = "/data/output/sales_partitioned"
+    data = [
+        ("Beijing", "order_001", 10),
+        ("Beijing", "order_002", 30),
+        ("Shanghai", "order_003", 20),
+        ("Guangzhou", "order_004", 15),
+        ("Shanghai", "order_005", 25)
+    ]
 
-    print("1. Read CSV")
-    df: DataFrame = (
-        spark.read
-        .option("header", True)
-        .option("inferSchema", True)
-        .csv(input_path)
-    )
+    columns = ["city", "order_id", "amount"]
 
+    df: DataFrame = spark.createDataFrame(data, columns)
+
+    print("1. Original Data")
     df.show()
-    df.printSchema()
 
-    print("2. Write Parquet partitioned by city")
-    (
-        df.write
-        .mode("overwrite")
-        .partitionBy("city")
-        .parquet(output_path)
+    print("2. Filter only")
+    filter_result: DataFrame = df.filter(F.col("amount") > 10)
+
+    filter_result.explain(True)
+    filter_result.show()
+
+    print("3. Group by city")
+    group_result: DataFrame = df.groupBy("city").agg(
+        F.sum("amount").alias("total_amount")
     )
 
-    print("3. Read partitioned Parquet")
-    result: DataFrame = spark.read.parquet(output_path)
-
-    result.show()
-    result.printSchema()
+    group_result.explain(True)
+    group_result.show()
 
     spark.stop()
 
