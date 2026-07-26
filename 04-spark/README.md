@@ -11,13 +11,19 @@
 - [x] DataFrame API vs Spark SQL
 - [x] Transformations 和 Actions
 - [x] Lazy Evaluation 和 explain()
-- [x] withColumn()
-- [x] when()
-- [x] orderBy() 和 limit()
-- [ ] Join
-- [ ] Partition
+- [x] DataFrame 常用 API
+- [x] Join 基础
+- [x] Join 字段冲突
+- [x] Join 后 null 处理
+- [ ] Aggregation
+- [ ] Window Function
+- [ ] Read / Write Files
 - [ ] Parquet
+- [ ] Partition
+- [ ] Shuffle
+- [ ] Cache / Persist
 - [ ] Performance Optimization
+- [ ] Mini ETL Project
 
 ---
 
@@ -129,18 +135,6 @@ df = spark.createDataFrame(data, ["city", "amount"])
 df.show()
 ```
 
-预期结果：
-
-```text
-+--------+------+
-|    city|amount|
-+--------+------+
-| Beijing|    10|
-|Shanghai|    20|
-| Beijing|    30|
-+--------+------+
-```
-
 ---
 
 # 5. 第一个 PySpark 脚本
@@ -232,8 +226,6 @@ apache/spark-py:latest \
 
 ## Lab
 
-代码：
-
 ```python
 from pyspark.sql import SparkSession, DataFrame
 
@@ -257,19 +249,10 @@ def main():
 
     df: DataFrame = spark.createDataFrame(data, columns)
 
-    print("1. Original Data")
     df.show()
-
-    print("2. Schema")
     df.printSchema()
-
-    print("3. Select Columns")
     df.select("city", "amount").show()
-
-    print("4. Filter amount > 20")
     df.filter(df.amount > 20).show()
-
-    print("5. Group By city")
     df.groupBy("city").sum("amount").show()
 
     spark.stop()
@@ -304,8 +287,6 @@ df.createOrReplaceTempView("sales")
 
 ## Lab
 
-代码：
-
 ```python
 from pyspark.sql import SparkSession, DataFrame
 
@@ -329,25 +310,22 @@ def main():
 
     df: DataFrame = spark.createDataFrame(data, columns)
 
-    print("1. Original Data")
-    df.show()
-
-    print("2. DataFrame API: filter amount > 20")
-    df.filter(df.amount > 20).show()
-
-    print("3. SQL: filter amount > 20")
     df.createOrReplaceTempView("sales")
 
+    print("DataFrame API: filter amount > 20")
+    df.filter(df.amount > 20).show()
+
+    print("Spark SQL: filter amount > 20")
     spark.sql("""
         SELECT city, category, amount
         FROM sales
         WHERE amount > 20
     """).show()
 
-    print("4. DataFrame API: group by city")
+    print("DataFrame API: group by city")
     df.groupBy("city").sum("amount").show()
 
-    print("5. SQL: group by city")
+    print("Spark SQL: group by city")
     spark.sql("""
         SELECT city, SUM(amount) AS total_amount
         FROM sales
@@ -361,7 +339,7 @@ if __name__ == "__main__":
     main()
 ```
 
-## SQL 对应关系
+## 对应关系
 
 | SQL | DataFrame API |
 |-----|---------------|
@@ -411,8 +389,6 @@ Actions
 
 ## Lab
 
-代码：
-
 ```python
 from pyspark.sql import SparkSession, DataFrame
 
@@ -436,8 +412,6 @@ def main():
 
     df: DataFrame = spark.createDataFrame(data, columns)
 
-    print("1. Create Transformation")
-
     result: DataFrame = (
         df.filter(df.amount > 20)
           .select("city", "amount")
@@ -445,12 +419,10 @@ def main():
           .sum("amount")
     )
 
-    print("2. No result has been printed yet")
+    print("No result has been printed yet")
 
-    print("3. Action: show")
     result.show()
 
-    print("4. Action: count")
     row_count = result.count()
     print(f"Row count: {row_count}")
 
@@ -459,13 +431,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
-
-## 说明
-
-```text
-filter / select / groupBy / sum 是 Transformation
-show / count 是 Action
 ```
 
 ## 推荐写法
@@ -480,15 +445,6 @@ result = (
       .sum("amount")
 )
 ```
-
-不要写成：
-
-```python
-result = df.filter(df.amount > 20)
-           .select("city", "amount")
-```
-
-这种写法会报错。
 
 ---
 
@@ -508,18 +464,10 @@ Lazy Evaluation 中文叫惰性执行。
 `explain()` 用来查看 Spark 执行计划。
 
 ```python
-result.explain()
-```
-
-更详细：
-
-```python
 result.explain(True)
 ```
 
-## 执行计划
-
-运行 `result.explain(True)` 后，会看到：
+运行后会看到：
 
 ```text
 Parsed Logical Plan
@@ -528,8 +476,6 @@ Optimized Logical Plan
 Physical Plan
 ```
 
-简单理解：
-
 | 名称 | 含义 |
 |------|------|
 | Logical Plan | 逻辑计划：想做什么 |
@@ -537,8 +483,6 @@ Physical Plan
 | Physical Plan | 物理计划：Spark 实际怎么执行 |
 
 ## Lab
-
-代码：
 
 ```python
 from pyspark.sql import SparkSession, DataFrame
@@ -570,10 +514,7 @@ def main():
           .sum("amount")
     )
 
-    print("1. Explain execution plan")
     result.explain(True)
-
-    print("2. Action: show result")
     result.show()
 
     spark.stop()
@@ -585,38 +526,19 @@ if __name__ == "__main__":
 
 ---
 
-# 10. withColumn()
+# 10. DataFrame 常用 API
 
-## 概念
+## 10.1 withColumn()
 
-`withColumn()` 用来：
+### 概念
 
-```text
-新增列
-修改已有列
-```
-
-基本格式：
+`withColumn()` 用来新增列或修改已有列。
 
 ```python
 df.withColumn("column_name", expression)
 ```
 
-真实开发中推荐导入：
-
-```python
-from pyspark.sql import functions as F
-```
-
-引用字段推荐写：
-
-```python
-F.col("amount")
-```
-
-## Lab
-
-代码：
+### Lab
 
 ```python
 from pyspark.sql import SparkSession, DataFrame
@@ -633,33 +555,19 @@ def main():
     data = [
         ("Beijing", "A", 10),
         ("Shanghai", "A", 20),
-        ("Beijing", "B", 30),
-        ("Guangzhou", "B", 15),
-        ("Shanghai", "B", 25)
+        ("Beijing", "B", 30)
     ]
 
     columns = ["city", "category", "amount"]
 
     df: DataFrame = spark.createDataFrame(data, columns)
 
-    print("1. Original Data")
-    df.show()
-
-    print("2. Add new column: amount_x10")
-    df_with_new_column: DataFrame = df.withColumn(
+    result: DataFrame = df.withColumn(
         "amount_x10",
         F.col("amount") * 10
     )
 
-    df_with_new_column.show()
-
-    print("3. Modify existing column: amount")
-    df_modified: DataFrame = df.withColumn(
-        "amount",
-        F.col("amount") + 100
-    )
-
-    df_modified.show()
+    result.show()
 
     spark.stop()
 
@@ -668,154 +576,282 @@ if __name__ == "__main__":
     main()
 ```
 
-## SQL 对应关系
-
-PySpark：
-
-```python
-df.withColumn("amount_x10", F.col("amount") * 10)
-```
-
-对应 SQL：
-
-```sql
-SELECT
-    city,
-    category,
-    amount,
-    amount * 10 AS amount_x10
-FROM sales;
-```
-
-PySpark：
-
-```python
-df.withColumn("amount", F.col("amount") + 100)
-```
-
-对应 SQL：
-
-```sql
-SELECT
-    city,
-    category,
-    amount + 100 AS amount
-FROM sales;
-```
-
 ---
 
-# 11. when()
+## 10.2 when()
 
-## 概念
+### 概念
 
-`F.when(...).otherwise(...)` 对应 Hive SQL 里的：
+`F.when(...).otherwise(...)` 对应 SQL 里的：
 
 ```sql
 CASE WHEN ... THEN ... ELSE ... END
 ```
 
-常用于：
-
-```text
-字段打标
-条件转换
-分类字段生成
-```
-
-## Lab
-
-代码：
+### Lab
 
 ```python
-from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql import functions as F
-
-
-def main():
-    spark = (
-        SparkSession.builder
-        .appName("when-basic")
-        .getOrCreate()
-    )
-
-    data = [
-        ("Beijing", "A", 10),
-        ("Shanghai", "A", 20),
-        ("Beijing", "B", 30),
-        ("Guangzhou", "B", 15),
-        ("Shanghai", "B", 25)
-    ]
-
-    columns = ["city", "category", "amount"]
-
-    df: DataFrame = spark.createDataFrame(data, columns)
-
-    print("1. Original Data")
-    df.show()
-
-    print("2. Add amount_level column")
-    result: DataFrame = df.withColumn(
-        "amount_level",
-        F.when(F.col("amount") >= 20, "high")
-         .otherwise("low")
-    )
-
-    result.show()
-
-    spark.stop()
-
-
-if __name__ == "__main__":
-    main()
-```
-
-## 多条件写法
-
-```python
-result = df.withColumn(
+result: DataFrame = df.withColumn(
     "amount_level",
     F.when(F.col("amount") >= 30, "high")
      .when(F.col("amount") >= 20, "middle")
      .otherwise("low")
 )
+
+result.show()
 ```
+
+---
+
+## 10.3 orderBy() 和 limit()
+
+### 概念
+
+- `orderBy()` 用来排序
+- `limit()` 用来限制行数
+
+### Lab
+
+```python
+result: DataFrame = (
+    df.orderBy(F.col("amount").desc())
+      .limit(3)
+)
+
+result.show()
+```
+
+---
+
+## 10.4 drop()
+
+### 概念
+
+`drop()` 用来删除不需要的字段。
+
+### Lab
+
+```python
+result: DataFrame = df.drop("city_name")
+
+result.show()
+```
+
+---
+
+## 10.5 dropDuplicates()
+
+### 概念
+
+`dropDuplicates()` 用来去重。
+
+```python
+df.dropDuplicates()
+df.dropDuplicates(["city"])
+```
+
+注意：
+
+- 整行去重比较安全
+- 按部分字段去重时，Spark 不保证保留哪一条
+
+### Lab
+
+```python
+result1: DataFrame = df.dropDuplicates()
+
+result2: DataFrame = df.dropDuplicates(["city"])
+
+result1.show()
+result2.show()
+```
+
+---
+
+## 10.6 union()
+
+### 概念
+
+`union()` 用来上下合并两个 DataFrame，类似 SQL 的 `UNION ALL`。
+
+注意：
+
+- `union()` 按字段位置合并
+- 不会自动去重
+
+### Lab
+
+```python
+result: DataFrame = df_2025.union(df_2026)
+
+result.show()
+```
+
+---
+
+## 10.7 unionByName()
+
+### 概念
+
+`unionByName()` 按字段名合并，比 `union()` 更安全。
+
+### Lab
+
+```python
+result: DataFrame = df_2025.unionByName(df_2026)
+
+result.show()
+```
+
+字段缺失时：
+
+```python
+result: DataFrame = df_2025.unionByName(
+    df_2026,
+    allowMissingColumns=True
+)
+
+result.show()
+```
+
+---
+
+## 10.8 cast()
+
+### 概念
+
+`cast()` 用来转换字段类型。
 
 对应 SQL：
 
 ```sql
-CASE
-    WHEN amount >= 30 THEN 'high'
-    WHEN amount >= 20 THEN 'middle'
-    ELSE 'low'
-END AS amount_level
+CAST(amount AS INT)
 ```
 
-## 注意
+PySpark：
 
-条件顺序很重要，Spark 会从上往下判断。
+```python
+F.col("amount").cast("int")
+```
+
+### Lab
+
+```python
+result: DataFrame = df.withColumn(
+    "amount_int",
+    F.col("amount").cast("int")
+)
+
+result.show()
+result.printSchema()
+```
 
 ---
 
-# 12. orderBy() 和 limit()
+# 11. Join 基础
 
 ## 概念
 
-`orderBy()` 用来排序。
+Join 用来把两张表按某个字段关联起来。
 
-`limit()` 用来限制行数。
+常见 Join 类型：
 
-常用于：
-
-```text
-Top N 分析
-查看金额最高的记录
-排序后的明细检查
-```
+| Join 类型 | 含义 |
+|----------|------|
+| `inner` | 只保留两边都匹配的数据 |
+| `left` | 保留左表全部数据，右表匹配不到则为 null |
+| `right` | 保留右表全部数据，左表匹配不到则为 null |
+| `full` | 保留两边所有数据，匹配不到则为 null |
 
 ## Lab
 
-代码：
+```python
+from pyspark.sql import SparkSession, DataFrame
+
+
+def main():
+    spark = (
+        SparkSession.builder
+        .appName("join-basic")
+        .getOrCreate()
+    )
+
+    sales_data = [
+        ("Beijing", 10),
+        ("Shanghai", 20),
+        ("Beijing", 30),
+        ("Guangzhou", 15),
+        ("Shenzhen", 25)
+    ]
+
+    sales_columns = ["city", "amount"]
+
+    sales_df: DataFrame = spark.createDataFrame(
+        sales_data,
+        sales_columns
+    )
+
+    city_data = [
+        ("Beijing", "North"),
+        ("Shanghai", "East"),
+        ("Guangzhou", "South")
+    ]
+
+    city_columns = ["city", "region"]
+
+    city_df: DataFrame = spark.createDataFrame(
+        city_data,
+        city_columns
+    )
+
+    inner_result: DataFrame = sales_df.join(
+        city_df,
+        on="city",
+        how="inner"
+    )
+
+    left_result: DataFrame = sales_df.join(
+        city_df,
+        on="city",
+        how="left"
+    )
+
+    inner_result.show()
+    left_result.show()
+
+    spark.stop()
+
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+# 12. Join 字段冲突
+
+## 概念
+
+真实开发里，两张表经常有相同字段名。
+
+例如：
+
+```text
+sales_df: city, name, amount
+city_df:  city, name, region
+```
+
+Join 后两边都有 `name`，容易冲突。
+
+推荐做法：
+
+```text
+1. 给表起别名 alias()
+2. 明确选择字段 select()
+3. 给冲突字段重命名 alias()
+```
+
+## Lab
 
 ```python
 from pyspark.sql import SparkSession, DataFrame
@@ -825,35 +861,54 @@ from pyspark.sql import functions as F
 def main():
     spark = (
         SparkSession.builder
-        .appName("order-by-and-limit")
+        .appName("join-column-conflict")
         .getOrCreate()
     )
 
-    data = [
-        ("Beijing", "A", 10),
-        ("Shanghai", "A", 20),
-        ("Beijing", "B", 30),
-        ("Guangzhou", "B", 15),
-        ("Shanghai", "B", 25)
+    sales_data = [
+        ("Beijing", "order_001", 10),
+        ("Shanghai", "order_002", 20),
+        ("Beijing", "order_003", 30),
+        ("Guangzhou", "order_004", 15),
+        ("Shenzhen", "order_005", 25)
     ]
 
-    columns = ["city", "category", "amount"]
+    sales_columns = ["city", "name", "amount"]
 
-    df: DataFrame = spark.createDataFrame(data, columns)
+    sales_df: DataFrame = spark.createDataFrame(
+        sales_data,
+        sales_columns
+    )
 
-    print("1. Original Data")
-    df.show()
+    city_data = [
+        ("Beijing", "Beijing CN", "North"),
+        ("Shanghai", "Shanghai CN", "East"),
+        ("Guangzhou", "Guangzhou CN", "South")
+    ]
 
-    print("2. Order by amount ascending")
-    df.orderBy(F.col("amount").asc()).show()
+    city_columns = ["city", "name", "region"]
 
-    print("3. Order by amount descending")
-    df.orderBy(F.col("amount").desc()).show()
+    city_df: DataFrame = spark.createDataFrame(
+        city_data,
+        city_columns
+    )
 
-    print("4. Top 3 amount")
+    sales = sales_df.alias("s")
+    city = city_df.alias("c")
+
     result: DataFrame = (
-        df.orderBy(F.col("amount").desc())
-          .limit(3)
+        sales.join(
+            city,
+            on=F.col("s.city") == F.col("c.city"),
+            how="left"
+        )
+        .select(
+            F.col("s.city").alias("city"),
+            F.col("s.name").alias("order_name"),
+            F.col("s.amount").alias("amount"),
+            F.col("c.name").alias("city_name"),
+            F.col("c.region").alias("region")
+        )
     )
 
     result.show()
@@ -865,33 +920,75 @@ if __name__ == "__main__":
     main()
 ```
 
-## SQL 对应关系
+---
 
-PySpark：
+# 13. Join 后 null 处理
+
+## 概念
+
+`left join` 后，如果右表匹配不到，右表字段会变成 null。
+
+常用方法：
+
+| 方法 | 作用 |
+|------|------|
+| `fillna()` | 把 null 填成默认值 |
+| `isNull()` | 判断字段是否为 null |
+| `isNotNull()` | 判断字段是否不为 null |
+
+## Lab
 
 ```python
-df.orderBy(F.col("amount").desc()).limit(3)
+filled_df: DataFrame = joined_df.fillna(
+    {
+        "city_name": "Unknown City",
+        "region": "Unknown Region"
+    }
+)
+
+unmatched_df: DataFrame = joined_df.filter(
+    F.col("region").isNull()
+)
+
+filled_df.show()
+unmatched_df.show()
 ```
 
-对应 SQL：
+## 真实开发意义
 
-```sql
-SELECT
-    city,
-    category,
-    amount
-FROM sales
-ORDER BY amount DESC
-LIMIT 3;
-```
-
-## 注意
-
-`orderBy()` 通常比较重，因为排序可能需要跨分区移动数据。
+在数仓里，left join 维表后出现 null，通常说明：
 
 ```text
-轻操作：select / filter
-重操作：groupBy / join / orderBy
+1. 维表缺数据
+2. join key 不一致
+3. 源数据有脏值
+4. 维表更新延迟
+```
+
+---
+
+# 14. 当前 Spark Roadmap
+
+后续主线不再继续发散零散 API，改为按 Spark 核心能力推进：
+
+```text
+Aggregation
+    ↓
+Window Function
+    ↓
+Read / Write Files
+    ↓
+Parquet
+    ↓
+Partition
+    ↓
+Shuffle
+    ↓
+Cache / Persist
+    ↓
+Performance Optimization
+    ↓
+Mini ETL Project
 ```
 
 ---
@@ -948,11 +1045,11 @@ Action 才触发执行
 
 Lazy Evaluation 让 Spark 可以优化执行计划
 
-withColumn 用于新增或修改字段
+withColumn / when / cast 等是常用 DataFrame API
 
-when 用于 CASE WHEN 条件判断
+join 是事实表关联维表的核心操作
 
-orderBy + limit 用于排序和 Top N
+left join 后的 null 要检查业务含义
 ```
 
 ## 推荐导入
@@ -976,5 +1073,5 @@ result = (
 ## 下一节
 
 ```text
-Join
+Aggregation
 ```
