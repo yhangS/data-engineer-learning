@@ -5,12 +5,12 @@ from pyspark.sql import functions as F
 def main():
     spark = (
         SparkSession.builder
-        .appName("read-write-files-basic")
+        .appName("parquet-basic")
         .getOrCreate()
     )
 
     input_path = "/data/input/sales.csv"
-    output_path = "/data/output/sales_result"
+    output_path = "/data/output/sales_parquet"
 
     print("1. Read CSV")
     df: DataFrame = (
@@ -31,13 +31,18 @@ def main():
 
     result.show()
 
-    print("3. Write result as CSV")
+    print("3. Write result as Parquet")
     (
         result.write
         .mode("overwrite")
-        .option("header", True)
-        .csv(output_path)
+        .parquet(output_path)
     )
+
+    print("4. Read Parquet result")
+    parquet_df: DataFrame = spark.read.parquet(output_path)
+
+    parquet_df.show()
+    parquet_df.printSchema()
 
     spark.stop()
 
