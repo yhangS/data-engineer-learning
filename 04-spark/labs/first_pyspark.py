@@ -4,7 +4,7 @@ from pyspark.sql import functions as F
 
 def main():
     spark = SparkSession.builder \
-        .appName("join-null-handling") \
+        .appName("drop-column-basic") \
         .getOrCreate()
 
     sales_data = [
@@ -56,20 +56,15 @@ def main():
     print("1. Joined Data")
     joined_df.show()
 
-    print("2. Fill null region")
-    filled_df:DataFrame = joined_df.fillna(
-        {
-            "city_name":"Unknown City",
-            "region":"Unknown Region"
-        }
-    )
+    print("2. Drop city_name column")
+    result: DataFrame = joined_df.drop(F.col("city_name"))
 
-    filled_df.show()
+    result.show()
 
+    print("3. Drop city_name and region columns")
+    result2: DataFrame = joined_df.drop(F.col("city_name"), F.col("region"))
 
-    print("3. Find unmatched records")
-    unmatched_df:DataFrame = joined_df.filter(F.col("region").isNull())
-    unmatched_df.show()
+    result2.show()
 
     spark.stop()
 
