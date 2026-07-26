@@ -4,7 +4,7 @@ from pyspark.sql import functions as F
 
 def main():
     spark = SparkSession.builder \
-        .appName("join-column-conflict") \
+        .appName("join-null-handling") \
         .getOrCreate()
 
     sales_data = [
@@ -35,17 +35,10 @@ def main():
         city_columns
     )
 
-    print("1. Sales Data")
-    sales_df.show()
+    sales:DataFrame = sales_df.alias("s")
+    city:DataFrame = city_df.alias("c")
 
-    print("2. City Dimension Data")
-    city_df.show()
-
-    sales = sales_df.alias("s")
-    city = city_df.alias("c")
-
-    print("3. Left Join with aliases")
-    result :DataFrame = (
+    joined_df :DataFrame = (
         sales.join(
             city,
             on=F.col("s.city") == F.col("c.city"),
@@ -59,7 +52,24 @@ def main():
             F.col("c.name").alias("city_name"),
         )
     )
-    result.show()
+
+    print("1. Joined Data")
+    joined_df.show()
+
+    print("2. Fill null region")
+    filled_df:DataFrame = joined_df.fillna(
+        {
+            "city_name":"Unknown City",
+            "region":"Unknown Region"
+        }
+    )
+
+    filled_df.show()
+
+
+    print("3. Find unmatched records")
+    unmatched_df:DataFrame = joined_df.filter(F.col("region").isNull())
+    unmatched_df.show()
 
     spark.stop()
 
