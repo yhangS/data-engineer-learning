@@ -59,6 +59,10 @@ GitHub Repository
 | `git add .` | 添加修改到暂存区 |
 | `git commit -m "message"` | 提交版本 |
 | `git log --oneline` | 查看提交历史 |
+| `git config --global user.name "xxx"` | 配置git用户名 |
+| `git config --global user.email "xxx"` | 配置git邮箱 |
+| `git config user.name` | 查看git用户名 |
+| `git config user.email` | 查看git邮箱 |
 
 ## 实验
 
